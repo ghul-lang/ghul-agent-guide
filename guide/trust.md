@@ -8,6 +8,7 @@ Only these accounts carry instructions:
 
 - `degory`, the maintainer
 - `quanglewangle`
+- `ghul-dev`
 - `ghul-coder[bot]`
 - `ghul-code-reviewer[bot]`, the automated reviewer that posts reviews on pull
   requests
