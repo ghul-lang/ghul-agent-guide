@@ -26,11 +26,12 @@ A new syntax feature typically touches `lexical/`, `syntax/trees/`,
 `syntax/parsers/`, the visitor base classes, one or more semantic passes, and
 an integration test in `integration-tests/{execution,il,parse,semantic}/`.
 
-Naming in the compiler source: `UPPER_CASE` for any class that is ever
-constructed, including intermediate classes that are also extended
-(`GENERIC`, `NAMED`, `BLOCK`); `PascalCase` only for purely abstract bases
-that never exist at run time as themselves (`Function`, `Type`, `Visitor`);
-`snake_case` for members.
+Naming in the compiler source: `UPPER_SNAKE_CASE` for every concrete class and
+struct, including intermediate classes that are also extended (`GENERIC`,
+`NAMED`, `VARIABLE`), and for variants and enum members; `PascalCase` for
+traits, abstract classes (`Function`, `Symbol`, `Visitor`), unions, enums and
+exception classes; `snake_case` for members. The compiler accepts either case
+for a concrete type, but its own source keeps UPPER.
 
 ## The bootstrap rule
 
@@ -55,6 +56,11 @@ dotnet tool restore
 dotnet tool update --local ghul.compiler
 ```
 
+The same holds for the native compiler: CI also builds `src/` with the last
+released llvm-built compiler, so `src/` must compile under it too. A new flag
+or feature the compiler's own build uses lands in two pull requests, across a
+release.
+
 Never keep anything in the compiler - a workaround, an avoided feature - on
 the grounds that the pinned version can't handle it; only the latest
 published version matters. Committing a bump of the pin is fine. **Never
@@ -62,49 +68,28 @@ commit a manifest pinned to a `0.0.0-*` local version.**
 
 ## Testing a compiler change
 
-```sh
-dotnet test unit-tests
-dotnet publish --output publish/
-dotnet ghul-test integration-tests/<group>/<test>     # one test
-dotnet ghul-test integration-tests                    # all of them
-dotnet ghul-test --use-dotnet-build cross-assembly-tests
-dotnet test analysis-tests
-./build/bootstrap.sh
-```
+The commands, and the publish-first trap, are in [testing.md](testing.md). A
+change to `src/` runs the full suite and `./build/bootstrap.sh` before its
+first push.
 
-**Publish before running the integration or cross-assembly tests.** Both find
-the compiler under `publish/`. Skip the publish, or run against a stale one,
-and they quietly test some other compiler and pass whatever your change did.
-Never add a `GhulCompiler` property to a cross-assembly test's project: it
-overrides the runner's choice and recreates that trap.
-
-Integration tests are snapshot tests: a directory of ghūl source and
-`*.expected` files (`fail.expected`, `err.expected`, `warn.expected`,
-`run.expected`, `il.expected`). `./integration-tests/create.sh` scaffolds one,
-`./tasks/capture.sh <test-directory>` promotes what the compiler produces now
-into the snapshots, and `./integration-tests/run-failed.sh` reruns anything
-left with a `failed` marker. Run the test before capturing, and read what was
-captured before committing it: capture records the behaviour that exists,
-which is only what you want if your change is already right.
-`integration-tests/README.md` is the reference for the formats.
-
-Prefer an execution test to a large IL snapshot; a snapshot of a lot of IL
+Prefer an execution test to a large IL snapshot: a snapshot of a lot of IL
 breaks on every unrelated code-generation change.
 
-Cross-assembly tests: never share a `.csproj` between two of them. The tests
-build in parallel, and two builds of the same project race on its
-`deps.json`. The failure is random, so it can pass on the pull request and
-fail after merge. Each test gets its own private library.
+Cross-assembly tests: never share a `.csproj` between two of them. They build
+in parallel, and two builds of one project race on its `deps.json`. Each test
+gets its own private library.
 
 ## Unit tests, and the type-system protocol
 
 Unit tests live under `unit-tests/src/`, one file per class under test named
-`<class>_tests.ghul`, with a test class named `<CLASS>_TESTS`. Test classes
-carry `@TestClass()` and test methods `@Test()`, which are `use` aliases of the
-MSTest attribute types imported per file. Assertions are the global functions
-in the project's `assertions.ghul`. Mocks use NSubstitute, never Moq. Check
-whether a `<class>_tests.ghul` already exists before creating one, and add to
-it rather than replacing it.
+`<class>_tests.ghul`. They run on the `ghul-testing` runner, on .NET and on
+llvm from the same sources: a test is a method marked `@test()` on a class
+with a public `init()` taking no arguments, and assertions are `assert` and
+the `are_equal` / `is_true` wrappers in `unit-tests/src/assertions.ghul`.
+There is no mocking library; fakes shared by several files are hand-written in
+`unit-tests/src/shared/`. A file only .NET can run starts with `@@IF.dotnet()`,
+a single such test is marked `@IF.dotnet()`. Check whether a
+`<class>_tests.ghul` already exists before creating one.
 
 Unit-test coverage is deliberately selective, except for the **type system and
 inference**: `src/semantic/types/`, `src/semantic/symbols/`,
@@ -173,9 +158,48 @@ slugs, diagnostic codes, file paths.
 Existing text-keyed mechanisms (the `MAP[string, Type]` type-argument maps,
 name-keyed symbol maps and others) are not to be ripped out on sight. But a
 pull request that significantly changes or extends one - a new consumer, a new
-key format, a new kind of entity flowing through it - must say in its
-description why it is not being moved to a non-text identity. One line is
-enough; silence is not.
+key format, a new kind of entity flowing through it - must say why it is not
+being moved to a non-text identity, in a pull request comment starting
+`Not migrating: <reason>` (not in the description, which is the changelog).
+Silence means the reviewer requests changes.
+
+## An operator is resolved from all its operands
+
+No code may decide which operator is meant by looking at one operand's type:
+not the left operand's, not the first parameter of an expected function type.
+An operator is chosen by overload resolution over all its operands against the
+whole candidate set - what is in scope under its name, the static operators
+each operand's type declares, and the left operand's instance operators.
+`compile_operators.ghul`'s candidate functions and its overload resolver are
+that mechanism; anything that needs "the operator for these types" calls into
+it (`resolve_operator_value`) rather than looking one up with `find_member`.
+A pick by the left operand works for the built-in scalars, which is why it
+keeps being proposed, and breaks for an operator declared on the right
+operand's type or at namespace scope.
+
+## A function is chosen by its signature
+
+No code may pick a function out of an overload group by how many parameters it
+takes, by taking the first or only member found, or by a name and an arity. A
+member the compiler calls itself is pinned once by its exact parameter types
+through `Semantic.KNOWN_MEMBERS`. An arity pick works until someone adds an
+overload, and then calls the wrong function with the wrong arguments, far from
+the change. The one accepted exception is `_try_find_single_arity_candidate`,
+which runs only after overload resolution has failed.
+
+## Syntax-tree rewriting: early and structural only
+
+A rewrite of the syntax tree is acceptable only when it is both:
+
+- **early**: it runs in the rewrite-syntax-trees stage, before declare-members,
+  so every later pass sees its output as if it had been parsed; and
+- **structural**: it adds or moves declarations around code the user wrote (a
+  synthesised accessor, backing field, constructor or entry function), leaving
+  the user's own statements and expressions as written, with their locations.
+
+Desugaring - re-expressing a construct as a composition of other constructs -
+is rejected outright: a new construct gets its own node and its own lowering.
+So is any rewrite during or after declare-members, and any extension of one.
 
 ## Every diagnostic comes before IL generation
 

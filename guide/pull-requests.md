@@ -5,6 +5,31 @@ final commit message and the release-notes entry**. It is the one part of a
 pull request that ships permanently, and it is worth more care than the
 individual commit messages.
 
+## Opening one
+
+Work on a branch off an up-to-date `main`, never on `main` itself, with a
+short, descriptive name. A change that is logically one piece of work across
+several repositories uses the same branch name in each, and is one pull
+request per repository, landed in dependency order: the compiler or the
+runtime first, then what consumes them once it is published.
+
+Roll related pieces into one pull request with several commits rather than a
+run of small ones: every merge into `ghul` or `ghul-runtime` publishes a
+package, and each pull request costs a full CI run. Split only for unrelated
+changes, or where one piece has to be published before the other can use it.
+
+Write the description to a file in the format below, then:
+
+```sh
+git push -u origin <branch>
+gh pr create --base main --head <branch> --title "<title>" --body-file <file>
+gh pr merge <n> --squash --auto
+```
+
+Post any rationale for the reviewer as a comment straight after
+(`gh pr comment <n> --body-file <file>`). [review.md](review.md) covers what
+happens next.
+
 ## Who it is written for
 
 Write for a stranger who knows the repository well but has none of your

@@ -1,58 +1,69 @@
 # The language, and how to talk about it
 
-## Learn it from GHUL.md
+## Where to learn it
 
-[`GHUL.md`](https://github.com/ghul-lang/ghul/blob/main/GHUL.md) in the
-compiler repository is the language tutorial and reference, and it is
-authoritative. Read it before writing ghūl, and go back to it for any
-question of syntax or meaning rather than answering from memory: blocks close
-with mirrored keywords (`is ... si`, `if ... fi`, `do ... od`, `case ...
-esac`), there are no braces, and a remembered version of the rest produces
-confident, wrong code. The compiler is a work in progress, and where it and
-`GHUL.md` disagree, say so rather than quietly coding around it.
+- [examples.md](examples.md) is a set of short programs, one per area of the
+  language, each of which compiles on its own with the current compiler.
+  Imitate them. The first one, `00-traps`, is the mistakes agents make most
+  often, as wrong and right pairs.
+- `ghul/GHUL.md`, in a clone of the compiler, is the language tutorial and
+  reference, and it is the authority. When the examples don't settle how to
+  write something, search `GHUL.md` for the construct rather than writing it
+  from memory.
+- `GHUL.md`'s index lists the topic files under `ghul/docs/` (narrowing,
+  generics, async, targets and others). Read the one that matches the work
+  before anything specialised.
 
-The mistakes most often made by agents new to ghūl:
+Where the compiler and `GHUL.md` disagree, say so rather than quietly coding
+around it.
 
-- **.NET members are `snake_case` in ghūl.** `Console.WriteLine` is
-  `IO.Std.write_line`, `list.Count` is `list.count`, a static `None` is
-  `none`. Only enum members become `UPPER_SNAKE_CASE`.
+## The mistakes most often made
+
+The examples show each of these in code; this is the short list.
+
+- **Blocks close with mirrored keywords**: `is ... si`, `if ... fi`,
+  `do ... od`, `case ... esac`, `try ... yrt`. There are no braces.
+- **.NET members are `snake_case`.** `list.Count` is `list.count`,
+  `builder.Append(x)` is `builder.append(x)`. Enum members are
+  `UPPER_SNAKE_CASE`.
 - **Nothing is imported implicitly** except the built-in types and operators.
-  `write_line` needs `use IO.Std.write_line;` (or `use default`, which brings
-  in `write_line`, the pipes and the collections).
-- **`==` on a `string` is reference identity.** Two strings with the same
-  characters are `==` only if they are the same object, so comparing against
-  a string read from a file or the network silently answers false. Compare
-  content with `=~`. `==` on a struct, tuple included, is a compile error.
-- **Inside a string interpolation you are in expression context**, so a
-  nested string is written plainly: `"{f("x")}"`, not `"{f(\"x\")}"`.
+  `write_line` needs `use IO.Std.write_line` or `use default`.
+- **Strings have no `+`.** Join them with interpolation: `"{a}{b}"`.
+- **`==` is identity.** On strings it compares references, so text read at run
+  time is never `==` a literal; compare text with `=~`. `==` on a struct is a
+  compile error.
+- **Scalars widen in arithmetic and ordering only.** `int`, `long`, `single`
+  and `double` operands widen to meet, so `1.0 + 1` is `2.0`. Assignment,
+  `decimal` and `==` never widen: `let x: long = n` is an error, and
+  `long(n)` is the conversion.
+- **Inside an interpolation you are in expression context**, so a nested string
+  is written plainly: `"{f("x")}"`, never `"{f(\"x\")}"`.
 - **`new` is not part of the language.** Construct by calling the type:
-  `BOX(42)`, `LIST[int]()`, or `_(args)` where the type is already fixed by
-  the context. The constructor constraint is `[T: init]`.
-- **Naming is enforced.** `snake_case` for variables, functions and
-  properties; `PascalCase` for namespaces, traits, abstract classes, unions
-  and enums; `UPPER_SNAKE_CASE` for concrete classes, structs, variants and
-  enum members. A leading underscore makes a declaration non-public.
-- **A heap fact narrows only until a call that might change it.** After
-  `assert x.y?` followed by other calls, `x.y` can be optional again; copy it
-  into a local straight after the test.
+  `Box(42)`, `LIST[int]()`, or `_(args)` where the context fixes the type. The
+  constructor constraint is `[T: init]`.
+- **A `let` is immutable**; `let x mut = 0` can be reassigned.
+- **An `ARRAY` is read-only**; a `LIST` is the mutable one.
+- **There is no `main()`.** A program is its top-level statements, or an
+  `entry()` function.
+- **Naming.** `snake_case` for variables, functions and properties. Name your
+  own types in `PascalCase`. Variants and enum members are `UPPER_SNAKE_CASE`.
+  A leading underscore makes a declaration private.
 
 ## Words
 
 - **Never call a `let` local variable a "binding".** The word is banned
-  everywhere: source, diagnostics, documentation, examples, pull request
-  descriptions, commit messages. Say "local variable", with "immutable" or
-  "mutable" when it matters. When you meet an existing use in something you
-  are already editing, fix it.
+  everywhere: source, diagnostics, documentation, examples, pull requests and
+  commit messages. Say "local variable", with "immutable" or "mutable" when it
+  matters. When you meet an existing use in something you are editing, fix it.
 - Write the language's name as **ghūl**, with the macron, in prose. Plain
-  `ghul` is for identifiers, file names and anywhere else ASCII is required.
-- In prose, prefer plain words to technical ones where a plain word fits, and
-  avoid em-dashes.
-- State what happens; don't tell a story about it, and don't advocate for a
-  design in text that is meant to instruct.
+  `ghul` is for identifiers, file names and anywhere ASCII is required.
+- US spelling everywhere.
+- In prose, prefer plain words, and avoid em-dashes. State what happens rather
+  than telling a story about it.
 
 ## The style guide for examples and the website
 
 Prose and example code in `ghul-examples` and `ghul-dev` follow the style
 guide in `ghul-lang/ghul-style` (`STYLE.md`), which the automated reviewers in
 those two repositories apply. Read it before writing or editing either. It
-does not apply to the compiler source, its comments or internal documents.
+does not apply to the compiler's source or its internal documents.
