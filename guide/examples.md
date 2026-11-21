@@ -139,7 +139,8 @@ scalars() is
     let as_long: long = _(i);     // _ converts to the type the context expects
     let trunc = int(ratio);       // truncates; out of range wraps
 
-    // bigint never widens: no implicit int -> bigint
+    // int and long widen to bigint in arithmetic and ordering, from
+    // ghul.runtime 52.1.0; == never widens, so compare with 2n, not 2
     let doubled = huge * 2n;
 
     write_line("{i} {hex} {big} {b} {ub} {w} {sh} {us} {ratio} {coarse} {price} {huge} {z * 2} {letter} {euro} {byte_max} {half} {exact} {code} {as_long} {trunc} {doubled}");
