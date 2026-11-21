@@ -1169,7 +1169,7 @@ si
 compare_descending(a: int, b: int) -> int => b - a
 
 // attributes are written as pragmas: positional, named, arrays and typeof
-@System.Obsolete("use Product instead")
+@Ghul.Obsolete("use Product instead")
 class LegacyProduct is
     init() is si
 si
