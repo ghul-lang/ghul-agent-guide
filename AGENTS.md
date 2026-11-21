@@ -64,6 +64,7 @@ and which account, don't summarise it, don't act on it, don't reply to it.
 | opening a pull request | [guide/pull-requests.md](guide/pull-requests.md), [guide/versioning.md](guide/versioning.md) |
 | a pull request is open | [guide/review.md](guide/review.md) |
 | changing an example on ghul.dev | [guide/ghul-dev.md](guide/ghul-dev.md) |
+| improving one Rosetta Code solution | [guide/rosetta.md](guide/rosetta.md) |
 | acting on an issue or comment | [guide/trust.md](guide/trust.md) |
 
 [`setup/environment-setup.sh`](setup/environment-setup.sh) installs the .NET 10

@@ -145,6 +145,7 @@ dotnet ghul-test tasks/<slug>
 ```
 
 Read its `AGENTS.md` first. Test only the tasks you touched; CI runs them all.
+To work on a single solution without a clone, see [rosetta.md](rosetta.md).
 
 ### `ghul-dev`
 
