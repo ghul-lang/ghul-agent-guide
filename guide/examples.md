@@ -517,6 +517,13 @@ halve(n: int) -> int? => if n % 2 == 0 then n / 2 else null fi
 
 label(n: int) -> string => "n={n}"
 
+// in a file with no namespace block, a function may leave types out of its
+// signature: they are inferred from the file, and the function is private
+// to it. A return left out comes from an => expression, or from an is
+// body's returns (never its last statement)
+quarter(x: int) => x / 4                                // returns int
+scaled(factor, x: double) -> double => factor * x       // factor typed from its calls
+
 functions() is
     // literals: parameter and return types are usually inferred
     let twice = x => x * 2;
@@ -561,6 +568,8 @@ functions() is
     let scaled = [1, 2, 3] |> map(multiply(*, 100)) |> sum();
 
     write_line("{factorial(5)} {add_pair((3, 4))} {apply_to_ten(twice)} {f2(1, 2)} {scored} {evens_total} {r} {add_ten(5)} {scaled}");
+
+    write_line("{quarter(20)} {scaled(2.0, 1.5)}");
 
     // use before a pipe disposes the produced value; .iterator binds first
     // for line in use IO.File.read_lines(path).iterator do ... od
