@@ -526,7 +526,8 @@ label(n: int) -> string => "n={n}"
 // in a file with no namespace block, a function may leave types out of its
 // signature: they are inferred from the file, and the function is private
 // to it. A return left out comes from an => expression, or from an is
-// body's returns (never its last statement)
+// body's returns and its last statement; with every parameter typed, from
+// its returns only
 quarter(x: int) => x / 4                                // returns int
 scaled(factor, x: double) -> double => factor * x       // factor typed from its calls
 
