@@ -40,13 +40,17 @@ trap_strings() is
 si
 
 trap_scalars() is
-    // int, long, single and double widen in arithmetic and ordering only:
-    // 1.0 + 1 is 2.0, but assignment, decimal and == never widen
+    // a number widens to a wider one (int -> long, single, double; long ->
+    // single, double; single -> double) in arithmetic, call arguments, typed
+    // slots and if/case/array joins; nothing narrows, and decimal and ==
+    // never widen
     // wrong: let n: int = 2.5;  1.0m + 1;  1 == 1.0
     let ok = 1.0 + 1;
+    let slot: double = 1;
+    let joined = if ok > 1.0 then 1 else 2.5 fi;   // double
     let also = 1.0m + decimal(1);
     let same = double(1) == 1.0;
-    write_line("{ok} {also} {same}");
+    write_line("{ok} {slot} {joined} {also} {same}");
 si
 
 trap_optionals() is
@@ -131,9 +135,11 @@ scalars() is
     let euro = 0x20AC`c;          // char
     let byte_max = 0xFF`ub;       // ubyte
 
-    // arithmetic widens int -> long, single, double; anything else converts
+    // int widens to long, single and double in arithmetic, at a call
+    // argument, into a typed slot and in a join; anything else converts
     // explicitly
     let half = i / 2.0;           // the int widens to double
+    let root = Ghul.Math.sqrt(i); // so does a call argument
     let exact = decimal(i) / 2m;  // decimal never widens; a scalar type is a converting constructor
     let code = int('A');          // 65
     let as_long: long = _(i);     // _ converts to the type the context expects
@@ -143,7 +149,7 @@ scalars() is
     // ghul.runtime 52.1.0; == never widens, so compare with 2n, not 2
     let doubled = huge * 2n;
 
-    write_line("{i} {hex} {big} {b} {ub} {w} {sh} {us} {ratio} {coarse} {price} {huge} {z * 2} {letter} {euro} {byte_max} {half} {exact} {code} {as_long} {trunc} {doubled}");
+    write_line("{i} {hex} {big} {b} {ub} {w} {sh} {us} {ratio} {coarse} {price} {huge} {z * 2} {letter} {euro} {byte_max} {half} {root} {exact} {code} {as_long} {trunc} {doubled}");
 si
 ```
 
