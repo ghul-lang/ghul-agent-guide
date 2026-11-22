@@ -85,7 +85,8 @@ they test some other compiler and pass whatever your change did. Never add a
 
 Integration tests are snapshot tests: a directory of ghūl source with
 `*.expected` files (`fail.expected`, `err.expected`, `warn.expected`,
-`run.expected`, `il.expected`) and a `ghulflags` file.
+`run.expected`, `il.expected`) and a `test.json` holding the test's settings
+(`{}` for none; `integration-tests/README.md` lists the keys).
 `./integration-tests/create.sh` makes one, and
 `./tasks/capture.sh <test-directory>` copies what the compiler produced on the
 last run into the snapshots. Run the test first, then read every file capture
