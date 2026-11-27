@@ -1191,11 +1191,11 @@ class LegacyProduct is
     init() is si
 si
 
-// asynchronous code: declaring Tasks.TASK[T] as the return type makes await
+// asynchronous code: declaring Concurrency.Future[T] as the return type makes await
 // available in the body
-double_async(n: int) -> Tasks.TASK[int] => Tasks.TASK.from_result(n * 2)
+double_async(n: int) -> Concurrency.Future[int] => Concurrency.Future.from_result(n * 2)
 
-compute_async() -> Tasks.TASK[int] is
+compute_async() -> Concurrency.Future[int] is
     let a = await double_async(10);     // await is an expression; suspends here
     let b = await double_async(a);
     return b;                           // a bare T return is wrapped for you
