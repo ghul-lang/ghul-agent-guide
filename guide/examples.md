@@ -99,12 +99,19 @@ for i in 1::3 do
     write_line("number {i}");
 od
 
+// top-level statements can await: the program ends when the last one finishes
+await Concurrency.sleep(1);
+write_line("done");
+
 // An explicit entry is equally valid, with any of these signatures
 // (parameters are recognised by type, in either order):
 //   entry()
 //   entry(args: string[]) -> int
 //   entry(env: Ghul.Environment)
 //   entry(args: string[], env: Ghul.Environment) -> int
+//   entry() -> Concurrency.Future
+//   entry(args: string[]) -> Concurrency.Future[int]   (the int is the exit status)
+// A REPL cell's top-level statements cannot await.
 ```
 
 ## 20-scalars
@@ -1200,4 +1207,6 @@ compute_async() -> Concurrency.Future[int] is
     let b = await double_async(a);
     return b;                           // a bare T return is wrapped for you
 si
+
+// top-level statements can await too, and an entry can return a Future (see 10)
 ```
