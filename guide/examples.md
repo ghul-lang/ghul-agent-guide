@@ -1024,6 +1024,24 @@ unions() is
     write_line("{text}");
 si
 
+// a failed ! returns the error from a function that returns the same union,
+// when each other variant's field implements Ghul.Error; elsewhere it throws
+union ParseError: Ghul.Error is
+    EMPTY;
+si
+
+parse(s: string) -> Result[int, ParseError] =>
+    if s =~ "" then Result.ERROR(ParseError.EMPTY) else Result.OK(s.length) fi
+
+total(a: string, b: string) -> Result[int, ParseError] => Result.OK(parse(a)! + parse(b)!)
+
+parse_later(s: string) -> Concurrency.Future[Result[int, ParseError]] => Concurrency.Future.from_result(parse(s))
+
+// await binds before a trailing !, so this awaits, then unwraps or throws
+doubled(s: string) -> Concurrency.Future[int] is
+    return await parse_later(s)! * 2;
+si
+
 // partial adds members to an already-declared type; impl also makes the
 // target implement a trait (both same-assembly only)
 partial Tally is
